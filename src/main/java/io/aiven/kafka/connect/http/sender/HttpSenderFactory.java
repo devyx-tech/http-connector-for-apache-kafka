@@ -16,19 +16,7 @@
 
 package io.aiven.kafka.connect.http.sender;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509ExtendedTrustManager;
-
-import java.net.ProxySelector;
-import java.net.Socket;
 import java.net.http.HttpClient;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 
 import org.apache.kafka.connect.errors.ConnectException;
 
@@ -37,77 +25,18 @@ import io.aiven.kafka.connect.http.config.HttpSinkConfig;
 public final class HttpSenderFactory {
 
     public static HttpSender createHttpSender(final HttpSinkConfig config) {
-        final var client = buildHttpClient(config);
         switch (config.authorizationType()) {
             case NONE:
-                return new DefaultHttpSender(config, client);
+                return new DefaultHttpSender(config, HttpClient.newHttpClient());
             case STATIC:
-                return new StaticAuthHttpSender(config, client);
+                return new StaticAuthHttpSender(config, HttpClient.newHttpClient());
             case OAUTH2:
                 final OAuth2AccessTokenHttpSender oauth2AccessTokenHttpSender =
-                    new OAuth2AccessTokenHttpSender(config, client);
-                return new OAuth2HttpSender(config, client, oauth2AccessTokenHttpSender);
+                    new OAuth2AccessTokenHttpSender(config, HttpClient.newHttpClient());
+                return new OAuth2HttpSender(config, HttpClient.newHttpClient(), oauth2AccessTokenHttpSender);
             default:
                 throw new ConnectException("Can't create HTTP sender for auth type: " + config.authorizationType());
         }
     }
 
-    private static final TrustManager DUMMY_TRUST_MANAGER = new X509ExtendedTrustManager() {
-        @Override
-        public void checkClientTrusted(final X509Certificate[] chain, final String authType, final Socket socket)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] chain, final String authType, final Socket socket)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] chain, final String authType, final SSLEngine engine)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] chain, final String authType, final SSLEngine engine)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-            return new java.security.cert.X509Certificate[0];
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] chain, final String authType)
-            throws CertificateException {
-
-        }
-
-        @Override
-        public void checkServerTrusted(final java.security.cert.X509Certificate[] chain, final String authType)
-            throws CertificateException {
-        }
-    };
-
-    static HttpClient buildHttpClient(final HttpSinkConfig config) {
-        final var clientBuilder = HttpClient.newBuilder();
-        if (config.hasProxy()) {
-            clientBuilder.proxy(ProxySelector.of(config.proxy()));
-        }
-        if (config.sslTrustAllCertificates()) {
-            try {
-                final SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, new TrustManager[] {DUMMY_TRUST_MANAGER}, new SecureRandom());
-                clientBuilder.sslContext(sslContext);
-            } catch (NoSuchAlgorithmException | KeyManagementException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return clientBuilder.build();
-    }
 }

@@ -16,12 +16,8 @@
 
 package io.aiven.kafka.connect.http.converter;
 
-import javax.swing.UIDefaults;
-
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
-
 
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
@@ -72,41 +68,10 @@ class RecordValueConverterTest {
     }
 
     @Test
-    void convertWeirdMapRecord() {
-        final var recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA);
-
-        final UIDefaults value = new UIDefaults(
-            new String[] {"Font", "BeautifulFont"}
-        );
-
-        final var sinkRecord = new SinkRecord(
-            "some-topic", 0,
-            SchemaBuilder.string(),
-            "some-key", recordSchema, value, 1L);
-
-        assertThat(recordValueConverter.convert(sinkRecord)).isEqualTo("{\"Font\":\"BeautifulFont\"}");
-    }
-
-    @Test
     void convertHashMapRecord() {
         final var recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA);
 
         final Map<String, String> value = new HashMap<>();
-        value.put("key", "value");
-
-        final var sinkRecord = new SinkRecord(
-                "some-topic", 0,
-                SchemaBuilder.string(),
-                "some-key", recordSchema, value, 1L);
-
-        assertThat(recordValueConverter.convert(sinkRecord)).isEqualTo("{\"key\":\"value\"}");
-    }
-
-    @Test
-    void convertLinkedHashMapRecord() {
-        final var recordSchema = SchemaBuilder.map(Schema.STRING_SCHEMA, Schema.STRING_SCHEMA);
-
-        final Map<String, String> value = new LinkedHashMap<>();
         value.put("key", "value");
 
         final var sinkRecord = new SinkRecord(

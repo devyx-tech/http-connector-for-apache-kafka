@@ -16,7 +16,6 @@
 
 package io.aiven.kafka.connect.http.config;
 
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
@@ -28,7 +27,6 @@ import java.util.stream.Stream;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigValue;
 
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -75,9 +73,7 @@ final class HttpSinkConfigTest {
                 .returns(null, from(HttpSinkConfig::oauth2ClientScope))
                 .returns(OAuth2AuthorizationMode.HEADER, from(HttpSinkConfig::oauth2AuthorizationMode))
                 .returns("access_token", from(HttpSinkConfig::oauth2ResponseTokenProperty))
-                .returns(null, from(HttpSinkConfig::kafkaRetryBackoffMs))
-                .returns(false, from(HttpSinkConfig::hasProxy))
-                .returns(false, from(HttpSinkConfig::sslTrustAllCertificates));
+                .returns(null, from(HttpSinkConfig::kafkaRetryBackoffMs));
     }
 
     @Test
@@ -292,7 +288,7 @@ final class HttpSinkConfigTest {
 
         assertThat(HttpSinkConfig.configDef().validate(properties))
                 .filteredOn(x -> x.name().equals("http.authorization.type"))
-                .first().extracting(ConfigValue::recommendedValues).asInstanceOf(InstanceOfAssertFactories.LIST)
+                .first().extracting(ConfigValue::recommendedValues).asList()
                 .containsExactlyElementsOf(AuthorizationType.NAMES);
     }
 
@@ -581,59 +577,5 @@ final class HttpSinkConfigTest {
 
         config = new HttpSinkConfig(properties);
         assertThat(config.batchingEnabled()).isTrue();
-    }
-
-    @Test
-    void correctProxy() {
-        final Map<String, String> properties = Map.of(
-            "http.url", "http://localhost:8090",
-            "http.authorization.type", "none",
-            "http.proxy.host", "proxy",
-            "http.proxy.port", "80"
-        );
-
-        final var config = new HttpSinkConfig(properties);
-        assertThat(config.hasProxy()).isTrue();
-        assertThat(config.proxy())
-            .returns("proxy", InetSocketAddress::getHostName)
-            .returns(80, InetSocketAddress::getPort);
-    }
-
-    @Test
-    void missingProxyHost() {
-        final Map<String, String> properties = Map.of(
-            "http.url", "http://localhost:8090",
-            "http.authorization.type", "none",
-            "http.proxy.port", "80"
-        );
-
-        assertThatExceptionOfType(ConfigException.class)
-            .isThrownBy(() -> new HttpSinkConfig(properties))
-            .withMessage("Proxy host and port must be defined together");
-    }
-
-    @Test
-    void missingProxyPort() {
-        final Map<String, String> properties = Map.of(
-            "http.url", "http://localhost:8090",
-            "http.authorization.type", "none",
-            "http.proxy.host", "proxy"
-        );
-
-        assertThatExceptionOfType(ConfigException.class)
-            .isThrownBy(() -> new HttpSinkConfig(properties))
-            .withMessage("Proxy host and port must be defined together");
-    }
-
-    @Test
-    void disableHostnameVerification() {
-        final Map<String, String> properties = Map.of(
-            "http.url", "http://localhost:8090",
-            "http.authorization.type", "none",
-            "http.ssl.trust.all.certs", "true"
-        );
-
-        final var config = new HttpSinkConfig(properties);
-        assertThat(config.sslTrustAllCertificates()).isTrue();
     }
 }

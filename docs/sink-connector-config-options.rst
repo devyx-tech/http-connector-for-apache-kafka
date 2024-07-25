@@ -190,7 +190,7 @@ Delivery
   The time in milliseconds to wait following an error before a retry attempt is made.
 
   * Type: int
-  * Default: 3000 (3 seconds)
+  * Default: 3000
   * Valid Values: [0,...]
   * Importance: medium
 
@@ -203,16 +203,6 @@ Timeout
   * Type: int
   * Default: 30
   * Valid Values: [1,...]
-  * Importance: low
-
-Errors Handling
-^^^^^^^^^^^^^^^
-
-``errors.tolerance``
-  Optional errors.tolerance setting. Defaults to "none".
-
-  * Type: string
-  * Default: null
   * Importance: low
 
 
